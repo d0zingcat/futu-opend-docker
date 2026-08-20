@@ -1,0 +1,16 @@
+{
+  "opend_version": "10.9.6918",
+  "futu_api_version": "10.9.6908",
+  "download_url": "https://softwaredownload.futunn.com/Futu_OpenD_10.9.6918_Ubuntu18.04.tar.gz",
+  "archive_sha256": "37d95a2b302b50189e5eb464869d3bc364d2f5d8b466144f00d6a560d266c0b3",
+  "runtime_base": {
+    "image": "ubuntu:24.04",
+    "digest": "sha256:561618e2c15bf2397621dd04f96926663a3b5616c189cf7e38db7e82f5c538ea"
+  },
+  "built_tag": "10.9.6918-gm1",
+  "notes": [
+    "OpenD 10.9.6918 pairs with the pinned futu-api SDK 10.9.6908 (the lockfile pin); the four-part version need not match exactly because FUTU ships no 10.9.6918 PyPI release.",
+    "Ubuntu 24.04 runtime. The OpenD binary is dynamically linked but ships its own libssl/libcurl/libprotobuf, so it only needs the standard glibc libs present on 24.04. It runs non-root, read-only (except the state/tmp mounts), fully capability-dropped, and on an internal-only network to bound the risk surface.",
+    "Known CVE exceptions and compatibility notes recorded here are reviewed during every FUTU upgrade PR."
+  ]
+}

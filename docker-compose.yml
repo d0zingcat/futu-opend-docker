@@ -1,0 +1,19 @@
+services:
+  futu-opend:
+    build: .
+    environment:
+      FUTU_OPEND_IP: 0.0.0.0
+      FUTU_ACCOUNT_ID: ${FUTU_ACCOUNT_ID:-}
+      FUTU_ACCOUNT_PWD_MD5_FILE: /run/secrets/password-md5
+      FUTU_RSA_KEY_FILE: /run/secrets/futu.pem
+    volumes:
+      - futu-state:/home/futu/.com.futunn.FutuOpenD
+      - ./secrets:/run/secrets:ro
+    ports: ["127.0.0.1:11111:11111", "127.0.0.1:22222:22222"]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stdin_open: true
+    tty: true
+volumes: {futu-state: {}}
