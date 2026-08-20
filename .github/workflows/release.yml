@@ -20,7 +20,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/d0zingcat/futu-opend-docker:stable,ghcr.io/d0zingcat/futu-opend-docker:sha-${{ github.sha }}
+          tags: |
+            ghcr.io/d0zingcat/futu-opend-docker:stable
+            ghcr.io/d0zingcat/futu-opend-docker:sha-${{ github.sha }}
           labels: org.opencontainers.image.source=https://github.com/d0zingcat/futu-opend-docker
           provenance: mode=max
           sbom: true
