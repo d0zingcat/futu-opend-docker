@@ -40,4 +40,9 @@ The named volume persists OpenD login/device state. Use `docker attach` or the l
 - `FUTU_RSA_KEY_FILE` — readable PEM key file.
 - `FUTU_OPEND_IP`, `FUTU_OPEND_PORT`, `FUTU_OPEND_TELNET_PORT` — listener configuration.
 
-`stable` follows `main`; `sha-<commit>` identifies the source revision. Releases include SBOM and provenance. Repository code is MIT licensed; FUTU OpenD itself is not.
+## Releases
+
+Pushing a version tag, for example `v10.9.6918-gm1`, builds and publishes the
+matching image tag, `stable`, and an immutable `sha-<commit>` tag. Releases
+include SBOM and provenance. Repository code is MIT licensed; FUTU OpenD
+itself is not.
