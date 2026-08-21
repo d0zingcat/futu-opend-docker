@@ -1,19 +1,99 @@
+name: futu-opend
+
+# Dokploy deployment topology:
+#
+#   goldmachine app ─ goldmachine-futu (internal, shared) ─ futu-opend:11111
+#                                                                  │
+#                                                       futu-egress (outbound)
+#                                                                  │
+#                                                               FUTU services
+#
+# The shared network is created here and consumed as an external network by
+# Goldmachine. OpenD's state and secret volumes are also owned here. No port is
+# published: operate the gateway through Dokploy's terminal when 2FA is needed.
+
 services:
+  # Creates the RSA key once and fixes volume ownership before OpenD starts.
+  # It is idempotent: an existing key and the login/device cache are never
+  # replaced, which preserves the previous Goldmachine sidecar state.
+  futu-init:
+    image: ghcr.io/d0zingcat/futu-opend-docker:10.9.6918-1
+    pull_policy: always
+    user: "0:0"
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        install -d -m 0755 -o 10002 -g 10002 /home/futu/.com.futunn.FutuOpenD
+        install -d -m 0755 /run/futu-opend-secrets
+        if [ ! -s /run/futu-opend-secrets/futu.pem ]; then
+          umask 077
+          openssl genrsa -traditional -out /run/futu-opend-secrets/futu.pem 1024
+        fi
+        chown 10002:10002 /run/futu-opend-secrets/futu.pem
+        chmod 0644 /run/futu-opend-secrets/futu.pem
+    volumes:
+      - futu-state:/home/futu/.com.futunn.FutuOpenD
+      - futu-secrets:/run/futu-opend-secrets
+    read_only: true
+    tmpfs: [/tmp]
+    # The one-shot initializer needs only these capabilities to take ownership
+    # of a newly created named volume; the long-running gateway has none.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+    networks: []
+
   futu-opend:
-    build: .
+    image: ghcr.io/d0zingcat/futu-opend-docker:10.9.6918-1
+    pull_policy: always
     environment:
       FUTU_OPEND_IP: 0.0.0.0
       FUTU_ACCOUNT_ID: ${FUTU_ACCOUNT_ID:-}
-      FUTU_ACCOUNT_PWD_MD5_FILE: /run/secrets/password-md5
-      FUTU_RSA_KEY_FILE: /run/secrets/futu.pem
+      FUTU_OPEND_PORT: 11111
+      FUTU_OPEND_TELNET_PORT: 22222
+      FUTU_ACCOUNT_PWD_MD5_FILE: /run/futu-opend-secrets/futu-password-md5
+      FUTU_RSA_KEY_FILE: /run/futu-opend-secrets/futu.pem
     volumes:
       - futu-state:/home/futu/.com.futunn.FutuOpenD
-      - ./secrets:/run/secrets:ro
-    ports: ["127.0.0.1:11111:11111", "127.0.0.1:22222:22222"]
+      - futu-secrets:/run/futu-opend-secrets:ro
+    depends_on:
+      futu-init:
+        condition: service_completed_successfully
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     stdin_open: true
     tty: true
-volumes: {futu-state: {}}
+    networks:
+      futu-broker:
+        aliases: [futu-opend]
+      futu-egress: {}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pgrep -f FutuOpenD >/dev/null && (exec 3<>/dev/tcp/127.0.0.1/11111) 2>/dev/null'
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  # Goldmachine declares this same network as external. Give the actual Docker
+  # network a stable name so Dokploy project IDs never become an API contract.
+  futu-broker:
+    name: ${FUTU_OPEND_NETWORK:-goldmachine-futu}
+    internal: true
+  # Only OpenD joins this network, so the Goldmachine application cannot use it
+  # for FUTU egress.
+  futu-egress: {}
+
+volumes:
+  # Override these two names during migration to attach the existing
+  # Goldmachine volumes; see README. Afterwards keep them stable forever.
+  futu-state:
+    name: ${FUTU_OPEND_STATE_VOLUME:-futu-opend-state}
+  futu-secrets:
+    name: ${FUTU_OPEND_SECRETS_VOLUME:-futu-opend-secrets}
