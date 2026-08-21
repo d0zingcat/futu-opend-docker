@@ -2,20 +2,20 @@ name: futu-opend
 
 # Dokploy deployment topology:
 #
-#   goldmachine app ─ goldmachine-futu (internal, shared) ─ futu-opend:11111
+#   client app ─ futu-broker (internal, shared) ─ futu-opend:11111
 #                                                                  │
 #                                                       futu-egress (outbound)
 #                                                                  │
 #                                                               FUTU services
 #
-# The shared network is created here and consumed as an external network by
-# Goldmachine. OpenD's state and secret volumes are also owned here. No port is
+# The shared network is created here and consumed as an external network by a
+# client application. OpenD's state and secret volumes are also owned here. No port is
 # published: operate the gateway through Dokploy's terminal when 2FA is needed.
 
 services:
   # Creates the RSA key once and fixes volume ownership before OpenD starts.
   # It is idempotent: an existing key and the login/device cache are never
-  # replaced, which preserves the previous Goldmachine sidecar state.
+  # replaced, which preserves previous sidecar state.
   futu-init:
     image: ghcr.io/d0zingcat/futu-opend-docker:10.9.6918-1
     pull_policy: always
@@ -82,18 +82,18 @@ services:
     restart: unless-stopped
 
 networks:
-  # Goldmachine declares this same network as external. Give the actual Docker
+  # A client application declares this same network as external. Give the actual Docker
   # network a stable name so Dokploy project IDs never become an API contract.
   futu-broker:
-    name: ${FUTU_OPEND_NETWORK:-goldmachine-futu}
+    name: ${FUTU_OPEND_NETWORK:-futu-broker}
     internal: true
-  # Only OpenD joins this network, so the Goldmachine application cannot use it
+  # Only OpenD joins this network, so the client application cannot use it
   # for FUTU egress.
   futu-egress: {}
 
 volumes:
   # Override these two names during migration to attach the existing
-  # Goldmachine volumes; see README. Afterwards keep them stable forever.
+  # sidecar volumes; see README. Afterwards keep them stable forever.
   futu-state:
     name: ${FUTU_OPEND_STATE_VOLUME:-futu-opend-state}
   futu-secrets:
