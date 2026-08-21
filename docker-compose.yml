@@ -36,10 +36,11 @@ services:
       - futu-secrets:/run/futu-opend-secrets
     read_only: true
     tmpfs: [/tmp]
-    # The one-shot initializer needs only these capabilities to take ownership
-    # of a newly created named volume; the long-running gateway has none.
+    # The one-shot initializer needs these capabilities to take ownership of
+    # either a newly created volume or the migrated state directory. The
+    # long-running gateway has none.
     cap_drop: [ALL]
-    cap_add: [CHOWN, FOWNER]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
     security_opt: [no-new-privileges:true]
     restart: "no"
     networks: []
