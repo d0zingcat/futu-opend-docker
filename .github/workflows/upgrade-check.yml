@@ -1,0 +1,58 @@
+name: FUTU upgrade check
+
+# Reports upstream OpenD / futu-api drift but never modifies a release, image,
+# or deployment. The OpenD implementation and version manifest live in this
+# repository, so maintenance issues belong here rather than in Goldmachine.
+
+on:
+  schedule:
+    - cron: "23 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for SDK drift
+        id: drift
+        shell: bash
+        run: |
+          set +e
+          python3 upgrade_check.py > drift.txt 2>&1
+          status=$?
+          cat drift.txt
+          echo "detected=$([ "$status" -eq 1 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          {
+            echo 'body<<EOF'
+            cat drift.txt
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+          if [ "$status" -gt 1 ]; then
+            exit "$status"
+          fi
+
+      - name: Open or update the maintenance issue
+        if: steps.drift.outputs.detected == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.drift.outputs.body }}
+        run: |
+          title="FUTU/SDK version drift detected"
+          existing=$(gh issue list --state open --search "in:title $title" --json number -q '.[0].number')
+          body="$BODY
+
+          Do not auto-merge or auto-deploy. Review the archive URL and SHA-256,
+          non-root startup, socket health check, RSA adapter contract, SBOM, and
+          a real login/SMS/CAPTCHA/account/quote check before publishing a tag."
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

@@ -82,6 +82,7 @@ RUN set -eu; \
         locales \
         bash \
         findutils \
+        openssl \
         procps \
     ; \
     rm -rf /var/lib/apt/lists/*
