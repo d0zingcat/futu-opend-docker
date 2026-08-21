@@ -72,9 +72,9 @@ services:
         aliases: [futu-opend]
       futu-egress: {}
     healthcheck:
-      test:
-        - CMD-SHELL
-        - 'pgrep -f FutuOpenD >/dev/null && (exec 3<>/dev/tcp/127.0.0.1/11111) 2>/dev/null'
+      # /dev/tcp is a Bash feature; health checks otherwise use /bin/sh,
+      # which is dash on Ubuntu and reports a false failure.
+      test: [CMD, /bin/bash, -ec, 'pgrep -f "[F]utuOpenD" >/dev/null && (exec 3<>/dev/tcp/127.0.0.1/11111) 2>/dev/null']
       interval: 30s
       timeout: 10s
       start_period: 180s
