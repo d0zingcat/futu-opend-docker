@@ -2,7 +2,7 @@ name: FUTU upgrade check
 
 # Reports upstream OpenD / futu-api drift but never modifies a release, image,
 # or deployment. The OpenD implementation and version manifest live in this
-# repository, so maintenance issues belong here rather than in Goldmachine.
+# repository, so maintenance issues belong here rather than in a consuming app.
 
 on:
   schedule:
