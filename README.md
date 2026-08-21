@@ -42,7 +42,7 @@ The named volume persists OpenD login/device state. Use `docker attach` or the l
 
 ## Releases
 
-Pushing a version tag, for example `v10.9.6918-gm1`, builds and publishes the
-matching image tag, `stable`, and an immutable `sha-<commit>` tag. Releases
-include SBOM and provenance. Repository code is MIT licensed; FUTU OpenD
-itself is not.
+Pushing a version tag, for example `v10.9.6918`, builds and publishes the
+matching image tag without the `v` prefix (`10.9.6918`), `stable`, and an
+immutable `sha-<12-character-commit>` tag. Releases include SBOM and
+provenance. Repository code is MIT licensed; FUTU OpenD itself is not.
