@@ -9,7 +9,7 @@ permissions:
   attestations: write
   id-token: write
 env:
-  DOCKER_METADATA_SHORT_SHA_LENGTH: 12
+  DOCKER_METADATA_SHORT_SHA_LENGTH: 7
 jobs:
   image:
     runs-on: ubuntu-latest
