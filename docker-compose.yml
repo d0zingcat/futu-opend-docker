@@ -1,5 +1,11 @@
 name: futu-opend
 
+# Dokploy checks out this repository before running Compose. Build once from
+# that checkout and reuse the local image for both the initializer and OpenD.
+x-futu-build: &futu-build
+  context: .
+  dockerfile: Dockerfile
+
 # Dokploy deployment topology:
 #
 #   client app ─ futu-broker (internal, shared) ─ futu-opend:11111
@@ -17,8 +23,9 @@ services:
   # It is idempotent: an existing key and the login/device cache are never
   # replaced, which preserves previous sidecar state.
   futu-init:
-    image: ghcr.io/d0zingcat/futu-opend-docker:10.9.6918-1
-    pull_policy: always
+    image: futu-opend:source
+    build: *futu-build
+    pull_policy: build
     user: "0:0"
     entrypoint: ["/bin/bash", "-ec"]
     command:
@@ -46,8 +53,7 @@ services:
     networks: []
 
   futu-opend:
-    image: ghcr.io/d0zingcat/futu-opend-docker:10.9.6918-1
-    pull_policy: always
+    image: futu-opend:source
     environment:
       FUTU_OPEND_IP: 0.0.0.0
       FUTU_ACCOUNT_ID: ${FUTU_ACCOUNT_ID:-}
